@@ -2,21 +2,21 @@ import requests
 import urllib3
 import json
 
-# SSL hatalarını gizle
+# Hide SSL issues
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-# --- AYARLAR ---
+# --- CONFIGS ---
 INPUT_FILE = "domains.txt"   
 OUTPUT_FILE = "evreka.txt"   
-TARGET_VERSIONS = ["1.82.7", "1.82.8"] # Bu versiyonlar özel olarak işaretlenecek
+TARGET_VERSIONS = ["1.82.7", "1.82.8"] # These versions will be specifically flagged
 KEYWORD = "LiteLLM"
 TIMEOUT = 4 
 # --------------
 
 def check_url(url):
     """
-    Sistemin LiteLLM olup olmadığını kontrol eder. 
-    LiteLLM ise (True, Versiyon) döner.
+    Checks if the system is LiteLLM. 
+    Returns (True, Version) if LiteLLM is detected.
     """
     full_url = f"{url.strip('/')}/openapi.json"
     try:
@@ -25,14 +25,14 @@ def check_url(url):
         if response.status_code == 200:
             content = response.text
             
-            # Anahtar kelime kontrolü (Büyük/küçük harf duyarsız)
+            # Keyword check (Case-insensitive)
             if KEYWORD.lower() in content.lower():
-                version = "Bilinmiyor" # Varsayılan değer
+                version = "Unknown" # Default value
                 try:
                     data = response.json()
-                    version = data.get("info", {}).get("version", "Bilinmiyor")
+                    version = data.get("info", {}).get("version", "Unknown")
                 except:
-                    pass # JSON parse edilemezse versiyon "Bilinmiyor" kalır
+                    pass # Keep as "Unknown" if JSON parsing fails
                 
                 return True, version
     except:
@@ -44,42 +44,49 @@ def main():
         with open(INPUT_FILE, "r") as f:
             targets = [line.strip() for line in f if line.strip()]
     except FileNotFoundError:
-        print(f"Hata: {INPUT_FILE} bulunamadı!")
+        print(f"Error: {INPUT_FILE} not found!")
         return
 
-    print(f"[*] {len(targets)} hedef taranıyor...")
-    print(f"[*] Kriter: İçerikte '{KEYWORD}' geçmesi yeterli.\n")
+    print(f"[*] Scanning {len(targets)} targets...")
+    print(f"[*] Criterion: Keyword '{KEYWORD}' must be present in content.\n")
 
     for target in targets:
+        # Clean protocol if already present in the list
         clean_target = target.replace("http://", "").replace("https://", "")
         
-        variations = [
-            f"http://{clean_target}",
-            f"https://{clean_target}",
-            f"http://{clean_target}:4000",
-            f"https://{clean_target}:4000"
-        ] if ":" not in clean_target else [f"http://{clean_target}", f"https://{clean_target}"]
+        # Prepare variations for ports and protocols
+        if ":" not in clean_target:
+            variations = [
+                f"http://{clean_target}",
+                f"https://{clean_target}",
+                f"http://{clean_target}:4000",
+                f"https://{clean_target}:4000"
+            ]
+        else:
+            # If port is already specified, only try http and https
+            variations = [f"http://{clean_target}", f"https://{clean_target}"]
 
         found_any = False
         for url in variations:
-            print(f"[*] Deneniyor: {url}", end="\r") 
+            # \r used to keep the terminal output clean during scanning
+            print(f"[*] Trying: {url}", end="\r") 
             is_litellm, ver = check_url(url)
             
             if is_litellm:
-                # Özel bir versiyon mu?
-                tag = "[ZAFİYETLİ OLABİLİR]" if ver in TARGET_VERSIONS else ""
+                # Check for specific vulnerable versions
+                tag = "[POTENTIALLY VULNERABLE]" if ver in TARGET_VERSIONS else ""
                 
-                result_msg = f"[+] LITELLM BULUNDU: {url} | Versiyon: {ver} {tag}"
+                result_msg = f"[+] LITELLM FOUND: {url} | Version: {ver} {tag}"
                 print("\n" + result_msg)
                 
-                # Her halükarda dosyaya yazıyoruz
+                # Write results to file
                 with open(OUTPUT_FILE, "a") as out:
-                    out.write(f"{url} | Versiyon: {ver} {tag}\n")
+                    out.write(f"{url} | Version: {ver} {tag}\n")
                 
                 found_any = True
                 break 
         
-    print("\n\n[+] Tarama bitti. Tüm LiteLLM sistemleri -> " + OUTPUT_FILE)
+    print("\n\n[+] Scan finished. All LiteLLM systems saved to -> " + OUTPUT_FILE)
 
 if __name__ == "__main__":
     main()
