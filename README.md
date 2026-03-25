@@ -11,6 +11,7 @@ python3 -m venv venv
 
 # Activate the Environment:
 source venv/bin/activate
+
 (You should now see (venv) at the start of your terminal line.)
 
 # Install the Required Library:
