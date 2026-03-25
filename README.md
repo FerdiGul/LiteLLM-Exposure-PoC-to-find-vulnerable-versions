@@ -16,7 +16,6 @@ source venv/bin/activate
 
 # Install the Required Library:
 pip install requests
-Run Your Script:
 
-# Run
+# Run Your Script:
 python3 script.py
