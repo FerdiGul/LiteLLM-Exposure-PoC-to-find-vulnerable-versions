@@ -6,21 +6,16 @@ Then, it creates a file named evraka.txt with this list.
 The script is based on the LiteLLM exposure incident from March 2026.
 
 # Usage
-Create the Virtual Environment:
-
-Bash
+# Create the Virtual Environment:
 python3 -m venv venv
-Activate the Environment:
 
-Bash
+# Activate the Environment:
 source venv/bin/activate
 (You should now see (venv) at the start of your terminal line.)
 
-Install the Required Library:
-
-Bash
+# Install the Required Library:
 pip install requests
 Run Your Script:
 
-Bash
+# Run
 python3 script.py
