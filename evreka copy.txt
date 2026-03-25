@@ -1,0 +1,3 @@
+#sample output
+http://1.2.3.4:4000 | Versiyon: 1.82.7
+https://1.2.3.4:4000 | Versiyon: 1.82.8 
